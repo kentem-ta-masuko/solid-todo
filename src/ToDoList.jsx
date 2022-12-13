@@ -1,41 +1,25 @@
-import { createSignal, For } from 'solid-js';
+import { batch, For } from 'solid-js';
+import { createStore } from 'solid-js/store';
 
 const createTask = (taskName) => {
-    const [completed, setCompleted] = createSignal(false);
     return {
         task: taskName,
-        completed,
-        setCompleted
+        isCompleted: false
     }
 }
 
 const initialState = [...Array(20000)].map((_, index) => createTask(`Task ${index} です`));
 
 const ToDoList = () => {
-     const [todos, setTodos] = createSignal(initialState);
+     const [todos, setTodos] = createStore(initialState);
      let inputElement;
 
      const handleAddTask = () => {
         if (!inputElement.value) return;
-        const newTask = createTask(inputElement.value);
-        setTodos(prevTodos => [...prevTodos, newTask]);
-        inputElement.value = '';
-    }
-
-    const handleRemoveTask = (index) => {
-        const newTodos = [...todos()];
-        newTodos.splice(index(), 1);
-        setTodos(newTodos);
-    }
-
-    const handleUpdateTask = (index) => {
-        const newTodos = todos().map((todo, todoIndex) => {
-            if (todoIndex === index()) {
-                todo.setCompleted(!todo.completed());
-            }
-            return todo;
+        batch(() => {
+            setTodos(todos.length, createTask(inputElement.value));
+            inputElement.value = '';
         });
-        setTodos(newTodos);
     }
 
     return (
@@ -44,16 +28,16 @@ const ToDoList = () => {
             Add Task : <input placeholder="Add New Task" ref={inputElement}/>
             <button onClick={handleAddTask}>Add</button>
             <ul>
-                <For each={todos()}>{ (todo, index) => (
+                <For each={todos}>{ (todo, index) => (
                     <li key={index()}
-                        style={{'text-decoration-line': todo.completed() ? 'line-through' : 'none' }}>
+                        style={{'text-decoration-line': todo.isCompleted ? 'line-through' : 'none' }}>
                         <input
                             type="checkbox"
-                            checked={todo.completed()}
-                            onChange={() => handleUpdateTask(index)}
+                            checked={todo.isCompleted}
+                            onChange={(e) => setTodos(index(), "isCompleted", e.currentTarget.checked)}
                         />
                         {todo.task}&nbsp;
-                        <button onClick={() => handleRemoveTask(index)}>
+                        <button onClick={() => setTodos((t) => [...t.slice(0, index()), ...t.slice(index() + 1)])}>
                             X
                         </button>
                     </li>
