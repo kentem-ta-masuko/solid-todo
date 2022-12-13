@@ -1,5 +1,4 @@
 import ToDoList from "./ToDoList";
-import ToDoList2 from "./ToDoList copy";
 
 function App() {
   return (
